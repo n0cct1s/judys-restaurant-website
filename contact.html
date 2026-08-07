@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contact &amp; Reservations | Judy's Sichuan Cuisine</title>
-  <meta name="description" content="Contact Judy's Sichuan Cuisine or make a reservation in Virginia Beach." />
+  <meta name="description" content="Visit Judy's Sichuan Cuisine in Virginia Beach — location, hours, and reservations." />
   <link rel="icon" href="images/judys/logo.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
@@ -26,7 +26,7 @@
           <li class="nav__item"><a class="is-active" href="contact.html">Contact</a></li>
         </ul>
       </nav>
-      <a href="#reserve" class="btn header__cta">Reserve</a>
+      <a href="tel:7574992810" class="btn header__cta">Phone Reservation</a>
     </div>
   </header>
 
@@ -34,96 +34,51 @@
     <section class="page-hero">
       <div class="container">
         <h1>Contact &amp; Reservations</h1>
-        <p>Call us or send a reservation request below. We look forward to welcoming you.</p>
+        <p>Call for a phone reservation — we look forward to welcoming you.</p>
       </div>
     </section>
 
     <section class="contact-page" id="reserve">
       <div class="container">
-        <div class="contact-grid">
-          <div class="reveal">
-            <article class="contact-card">
-              <h3>Location</h3>
-              <p>328 Constitution Dr<br />Virginia Beach, VA 23462</p>
-              <p><a href="tel:7574992810">(757) 499-2810</a></p>
-              <p><a href="mailto:judyssichuan@hotmail.com">judyssichuan@hotmail.com</a></p>
-              <p><strong>Closed on Tuesday</strong></p>
-            </article>
+        <div class="contact-layout">
+          <div class="contact-info reveal">
+            <div class="contact-block">
+              <p class="contact-label">Location</p>
+              <p class="contact-address">
+                328 Constitution Dr<br />
+                Virginia Beach, VA 23462
+              </p>
+            </div>
 
-            <article class="contact-card">
-              <h3>Opening Hours</h3>
-              <div class="hours-list">
-                <p>Mon, Wed, Thu: 11:30am - 9pm</p>
-                <p>Fri - Sat: 11:30am - 9:30pm</p>
-                <p>Sun: 11:30am - 9pm</p>
-                <p>Closed Tuesday</p>
-              </div>
-            </article>
+            <div class="contact-block">
+              <p class="contact-label">Phone Reservation</p>
+              <a class="contact-phone" href="tel:7574992810">(757) 499-2810</a>
+            </div>
 
-            <div class="contact-map">
-              <iframe
-                title="Judy's Sichuan Cuisine on Google Maps"
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                allowfullscreen
-                src="https://maps.google.com/maps?q=328%20Constitution%20Dr%2C%20Virginia%20Beach%2C%20VA%2023462&z=15&output=embed"
-              ></iframe>
+            <div class="contact-block">
+              <p class="contact-label">Email</p>
+              <a class="contact-email" href="mailto:judyssichuan@hotmail.com">judyssichuan@hotmail.com</a>
+            </div>
+
+            <div class="contact-block">
+              <p class="contact-label">Hours</p>
+              <ul class="hours-list">
+                <li><span>Mon, Wed, Thu</span><span>11:30am – 9pm</span></li>
+                <li><span>Fri – Sat</span><span>11:30am – 9:30pm</span></li>
+                <li><span>Sunday</span><span>11:30am – 9pm</span></li>
+                <li><span>Tuesday</span><span>Closed</span></li>
+              </ul>
             </div>
           </div>
 
-          <div class="reserve-form reveal">
-            <h2>Make a Reservation</h2>
-            <p>Tell us when you'd like to visit and we will follow up to confirm your table.</p>
-            <form id="reserve-form" action="#" method="post">
-              <div class="form-row">
-                <div class="form-field">
-                  <label for="first">First name</label>
-                  <input id="first" name="first" type="text" required />
-                </div>
-                <div class="form-field">
-                  <label for="last">Last name</label>
-                  <input id="last" name="last" type="text" required />
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-field">
-                  <label for="email">Email</label>
-                  <input id="email" name="email" type="email" required />
-                </div>
-                <div class="form-field">
-                  <label for="phone">Phone</label>
-                  <input id="phone" name="phone" type="tel" required />
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-field">
-                  <label for="guests">Guests</label>
-                  <select id="guests" name="guests" required>
-                    <option>1</option>
-                    <option selected>2</option>
-                    <option>3</option>
-                    <option>4</option>
-                    <option>5</option>
-                    <option>6+</option>
-                  </select>
-                </div>
-                <div class="form-field">
-                  <label for="date">Date</label>
-                  <input id="date" name="date" type="date" required />
-                </div>
-              </div>
-              <div class="form-field">
-                <label for="time">Time</label>
-                <input id="time" name="time" type="time" required />
-              </div>
-              <div class="form-field">
-                <label for="notes">Notes</label>
-                <textarea id="notes" name="notes" placeholder="Occasion, seating preference, allergies..."></textarea>
-              </div>
-              <button class="btn" type="submit">Submit Reservation Request</button>
-              <p class="form-note">Or call us at <a href="tel:7574992810">(757) 499-2810</a>.</p>
-              <div class="form-success" id="form-success" role="status">Thank you! Your reservation request has been received. We will contact you shortly to confirm.</div>
-            </form>
+          <div class="contact-map reveal">
+            <iframe
+              title="Judy's Sichuan Cuisine on Google Maps"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              allowfullscreen
+              src="https://maps.google.com/maps?q=328%20Constitution%20Dr%2C%20Virginia%20Beach%2C%20VA%2023462&z=15&output=embed"
+            ></iframe>
           </div>
         </div>
       </div>
@@ -145,6 +100,10 @@
             <div class="newsletter-form__row">
               <input id="newsletter-email-contact" type="email" name="email" required placeholder="Your email" autocomplete="email" />
               <button type="submit" class="btn btn--on-red">Sign Up</button>
+            </div>
+            <div class="hp-field" aria-hidden="true">
+              <label for="newsletter-company-contact">Company</label>
+              <input id="newsletter-company-contact" name="company" type="text" tabindex="-1" autocomplete="off" />
             </div>
             <p class="newsletter-msg" data-newsletter-msg hidden></p>
           </form>

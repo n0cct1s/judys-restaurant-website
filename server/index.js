@@ -26,8 +26,11 @@ const app = express();
 const PORT = Number(process.env.PORT || 3000);
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "judys-admin";
 const SESSION_MS = 1000 * 60 * 60 * 2; // 2 hours
+const SUBSCRIBE_LIMIT = 8;
+const SUBSCRIBE_WINDOW_MS = 15 * 60 * 1000;
+const subscribeHits = new Map();
 
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "32kb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(
   session({
@@ -39,9 +42,31 @@ app.use(
       httpOnly: true,
       sameSite: "lax",
       maxAge: SESSION_MS,
+      secure: process.env.NODE_ENV === "production",
     },
   })
 );
+
+function clientIp(req) {
+  const forwarded = String(req.headers["x-forwarded-for"] || "")
+    .split(",")[0]
+    .trim();
+  return forwarded || req.ip || req.socket?.remoteAddress || "unknown";
+}
+
+function allowSubscribe(ip) {
+  const now = Date.now();
+  const recent = (subscribeHits.get(ip) || []).filter(
+    (t) => now - t < SUBSCRIBE_WINDOW_MS
+  );
+  if (recent.length >= SUBSCRIBE_LIMIT) {
+    subscribeHits.set(ip, recent);
+    return false;
+  }
+  recent.push(now);
+  subscribeHits.set(ip, recent);
+  return true;
+}
 
 function requireAdmin(req, res, next) {
   if (!req.session?.isAdmin) {
@@ -67,6 +92,20 @@ app.get("/api/health", (_req, res) => {
 
 app.post("/api/newsletter/subscribe", (req, res) => {
   try {
+    // Honeypot: bots fill hidden "company" field; humans leave it empty.
+    if (String(req.body.company || "").trim()) {
+      return res.json({
+        ok: true,
+        message: "Thanks for signing up! Watch your inbox for a $10 coupon.",
+      });
+    }
+
+    if (!allowSubscribe(clientIp(req))) {
+      return res
+        .status(429)
+        .json({ error: "Too many signup attempts. Please try again later." });
+    }
+
     const subscriber = upsertSubscriber({
       email: req.body.email,
       source: "website",
@@ -74,10 +113,8 @@ app.post("/api/newsletter/subscribe", (req, res) => {
     res.json({
       ok: true,
       message: "Thanks for signing up! Watch your inbox for a $10 coupon.",
-      subscriber: {
-        email: subscriber.email,
-        status: subscriber.status,
-      },
+      // Do not expose the stored row; confirmation message is enough for the UI.
+      status: subscriber.status,
     });
   } catch (err) {
     const status = err.code === "ALREADY_SUBSCRIBED" ? 409 : 400;

@@ -43,6 +43,21 @@ db.exec(`
 
 export const STATUSES = ["subscribed", "unsubscribed", "bounced"];
 
+/** Format check — does not prove the mailbox exists (use double opt-in for that). */
+export function isValidEmail(email) {
+  const value = String(email || "").trim().toLowerCase();
+  if (!value || value.length > 254) return false;
+  if (value.includes("..") || value.startsWith(".") || value.endsWith(".")) return false;
+  const at = value.lastIndexOf("@");
+  if (at < 1) return false;
+  const local = value.slice(0, at);
+  const domain = value.slice(at + 1);
+  if (!local || local.length > 64 || !domain || !domain.includes(".")) return false;
+  return /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(
+    value
+  );
+}
+
 export function nowIso() {
   return new Date().toISOString();
 }
@@ -86,7 +101,7 @@ export function getSubscriberCounts() {
 
 export function upsertSubscriber({ email, name = "", source = "website" }) {
   const normalized = String(email || "").trim().toLowerCase();
-  if (!normalized || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+  if (!isValidEmail(normalized)) {
     const err = new Error("Please enter a valid email address.");
     err.code = "INVALID_EMAIL";
     throw err;
@@ -170,7 +185,7 @@ export function deleteSubscriber(id) {
 
 export function unsubscribeByEmail(email) {
   const normalized = String(email || "").trim().toLowerCase();
-  if (!normalized || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+  if (!isValidEmail(normalized)) {
     const err = new Error("Please enter a valid email address.");
     err.code = "INVALID_EMAIL";
     throw err;

@@ -109,21 +109,20 @@
     if (validMenus.has(next)) activateMenu(next);
   });
 
-  // Reservation form demo
-  const form = document.getElementById("reserve-form");
-  const success = document.getElementById("form-success");
-  form?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    success?.classList.add("is-visible");
-    form.reset();
-  });
-
   // Newsletter signup (footer + popup)
-  const subscribeEmail = async (email) => {
+  const isValidEmail = (email) => {
+    const value = String(email || "").trim().toLowerCase();
+    if (!value || value.length > 254 || value.includes("..")) return false;
+    return /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(
+      value
+    );
+  };
+
+  const subscribeEmail = async (email, company = "") => {
     const res = await fetch("/api/newsletter/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, company }),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(json.error || "Unable to subscribe right now.");
@@ -136,14 +135,24 @@
       e.preventDefault();
       const data = new FormData(newsletterForm);
       const email = String(data.get("email") || "").trim();
+      const company = String(data.get("company") || "");
 
       if (msg) {
         msg.hidden = true;
         msg.classList.remove("is-error");
       }
 
+      if (!isValidEmail(email)) {
+        if (msg) {
+          msg.hidden = false;
+          msg.classList.add("is-error");
+          msg.textContent = "Please enter a valid email address.";
+        }
+        return;
+      }
+
       try {
-        const json = await subscribeEmail(email);
+        const json = await subscribeEmail(email, company);
         newsletterForm.reset();
         if (msg) {
           msg.hidden = false;
@@ -183,6 +192,10 @@
         <form class="coupon-modal__form" data-coupon-form>
           <label class="sr-only" for="coupon-email">Email</label>
           <input id="coupon-email" name="email" type="email" required placeholder="Your email" autocomplete="email" />
+          <div class="hp-field" aria-hidden="true">
+            <label for="coupon-company">Company</label>
+            <input id="coupon-company" name="company" type="text" tabindex="-1" autocomplete="off" />
+          </div>
           <button class="btn" type="submit">Get My $10 Coupon</button>
           <p class="coupon-modal__msg" data-coupon-msg hidden></p>
         </form>
@@ -221,13 +234,23 @@
 
     form?.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const email = String(new FormData(form).get("email") || "").trim();
+      const data = new FormData(form);
+      const email = String(data.get("email") || "").trim();
+      const company = String(data.get("company") || "");
       if (msg) {
         msg.hidden = true;
         msg.classList.remove("is-error");
       }
+      if (!isValidEmail(email)) {
+        if (msg) {
+          msg.hidden = false;
+          msg.classList.add("is-error");
+          msg.textContent = "Please enter a valid email address.";
+        }
+        return;
+      }
       try {
-        const json = await subscribeEmail(email);
+        const json = await subscribeEmail(email, company);
         if (msg) {
           msg.hidden = false;
           msg.textContent =

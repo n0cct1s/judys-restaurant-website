@@ -321,6 +321,13 @@ p {
   color: rgba(255, 255, 255, 0.9);
 }
 
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
 @keyframes heroZoom {
   from { transform: scale(1.08); }
   to { transform: scale(1); }
@@ -825,54 +832,108 @@ p {
 
 /* Contact / reservation */
 .contact-page {
-  padding: 2.5rem 0 4.5rem;
+  padding: 1.5rem 0 5rem;
 }
 
-.contact-grid {
+.contact-layout {
   display: grid;
-  grid-template-columns: 1fr 1.05fr;
-  gap: 2.5rem;
-  align-items: start;
+  grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 3.5rem);
+  align-items: stretch;
 }
 
-.contact-card {
-  background: var(--paper-soft);
-  border: 1px solid var(--line);
-  padding: 1.75rem;
-  margin-bottom: 1.25rem;
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  padding: 0.25rem 0;
 }
 
-.contact-card h3 {
+.contact-block {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.contact-label {
+  margin: 0 0 0.4rem;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.contact-address {
+  margin: 0;
   font-family: var(--font-serif);
-  font-size: 1.5rem;
+  font-size: clamp(1.35rem, 2.4vw, 1.7rem);
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.contact-phone {
+  display: inline-block;
+  font-family: var(--font-serif);
+  font-size: clamp(1.85rem, 3.2vw, 2.35rem);
+  font-weight: 600;
+  line-height: 1.15;
   color: var(--red);
-  margin-bottom: 0.75rem;
+  text-decoration: none;
 }
 
-.contact-card p {
-  margin-bottom: 0.45rem;
+.contact-phone:hover {
+  color: var(--red-dark);
 }
 
-.contact-card a {
+.contact-email {
   color: var(--red);
   font-weight: 500;
+  text-decoration: none;
+  word-break: break-word;
 }
 
-.hours-list p {
-  margin-bottom: 0.25rem;
+.contact-email:hover {
+  text-decoration: underline;
+}
+
+.hours-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.hours-list li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: baseline;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.hours-list li span:last-child {
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
 }
 
 .contact-map {
-  border: 1px solid var(--line);
   overflow: hidden;
-  background: var(--paper-soft);
-  min-height: 280px;
+  background:
+    linear-gradient(145deg, var(--red-soft), transparent 42%),
+    var(--paper-soft);
+  min-height: 420px;
+  border: 1px solid var(--line);
 }
 
 .contact-map iframe {
   display: block;
   width: 100%;
-  height: 280px;
+  height: 100%;
+  min-height: 420px;
   border: 0;
 }
 
@@ -1015,6 +1076,16 @@ p {
 .newsletter-form {
   margin-top: 0.55rem;
   max-width: 100%;
+  position: relative;
+}
+
+.hp-field {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
 
 .newsletter-form__row {
@@ -1327,8 +1398,13 @@ body.coupon-modal-open {
   .welcome__grid,
   .story-grid,
   .story-grid--reverse,
-  .contact-grid {
+  .contact-layout {
     grid-template-columns: 1fr;
+  }
+
+  .contact-map,
+  .contact-map iframe {
+    min-height: 300px;
   }
 
   .story-grid--reverse .story-media {
