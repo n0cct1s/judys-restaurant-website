@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unsubscribe | Judy's Sichuan Cuisine</title>
+  <link rel="icon" href="images/judys/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="header is-solid" id="header">
+    <div class="header__inner">
+      <a href="index.html" class="brand-mark" aria-label="Judy's Sichuan Cuisine">
+        <img src="images/judys/logo.svg" alt="" />
+        <span>Judy's</span>
+      </a>
+      <a href="index.html" class="btn header__cta">Home</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <h1>Unsubscribe</h1>
+        <p>Stop receiving Judy's newsletter and coupon emails.</p>
+      </div>
+    </section>
+
+    <section class="contact-page">
+      <div class="container" style="max-width:520px">
+        <div class="reserve-form">
+          <h2>Confirm unsubscribe</h2>
+          <p>We'll move your email to the unsubscribed group. You can sign up again anytime from the website footer.</p>
+          <form id="unsubscribe-form">
+            <div class="form-field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" required autocomplete="email" />
+            </div>
+            <button class="btn" type="submit">Unsubscribe</button>
+            <p class="form-success" id="unsubscribe-msg" hidden></p>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const form = document.getElementById("unsubscribe-form");
+      const emailInput = document.getElementById("email");
+      const msg = document.getElementById("unsubscribe-msg");
+      const params = new URLSearchParams(location.search);
+      const preset = params.get("email");
+      if (preset) emailInput.value = preset;
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        msg.hidden = true;
+        msg.classList.remove("is-visible");
+        try {
+          const res = await fetch("/api/newsletter/unsubscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: emailInput.value.trim() }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || "Unable to unsubscribe.");
+          msg.textContent = data.message;
+          msg.hidden = false;
+          msg.classList.add("is-visible");
+          form.querySelector("button").disabled = true;
+        } catch (err) {
+          msg.textContent = err.message;
+          msg.hidden = false;
+          msg.classList.add("is-visible");
+          msg.style.background = "#f3d9d8";
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

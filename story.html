@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Our Story | Judy's Sichuan Cuisine</title>
+  <meta name="description" content="Our story begins in Sichuan - learn about the bold flavors and traditions behind Judy's Sichuan Cuisine." />
+  <link rel="icon" href="images/judys/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="header is-solid" id="header">
+    <div class="header__inner">
+      <a href="index.html" class="brand-mark" aria-label="Judy's Sichuan Cuisine">
+        <img src="images/judys/logo.svg" alt="" />
+        <span>Judy's</span>
+      </a>
+      <button class="burger" id="burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav" id="nav" aria-label="Primary">
+        <ul class="nav__list">
+          <li class="nav__item"><a href="index.html">Home</a></li>
+          <li class="nav__item"><a href="menu.html">Menu</a></li>
+          <li class="nav__item"><a class="is-active" href="story.html">Our Story</a></li>
+          <li class="nav__item"><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <a href="contact.html" class="btn header__cta">Reserve</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <h1>Our Story</h1>
+        <p>Welcome to Judy's - a taste of Sichuan brought to Virginia with bold flavor, hospitality, and tradition.</p>
+      </div>
+    </section>
+
+    <section class="story-section">
+      <div class="container">
+        <div class="story-grid reveal">
+          <div class="story-media" style="background-image:url('images/judys/story.jpg')"></div>
+          <div class="story-copy">
+            <p class="eyebrow">Heritage</p>
+            <h2>Our Story Begins In Sichuan</h2>
+            <p>Szechuan cuisine, Sichuan cuisine, or Szechwan cuisine (Chinese: 四川菜; or Chinese: 川菜) is a style of Chinese cuisine originating from Sichuan province in southwestern China. It has bold flavors, particularly the pungency and spiciness resulting from liberal use of garlic and chili peppers, as well as the unique flavor of the Sichuan pepper.</p>
+            <p>Peanuts, sesame paste, and ginger are also prominent ingredients in Szechuan cooking. Sichuan is colloquially known as the "heavenly country" due to its abundance of food and natural resources.</p>
+            <p>One ancient Chinese account declared that the people of Sichuan uphold good flavor, and they are fond of hot and spicy tastes. Most Szechuan dishes are spicy, although a typical meal includes non-spicy dishes to cool the palate.</p>
+            <p>According to at least one Chinese culinary writer, Szechuan cuisine is composed of seven basic flavors: sour, pungent, hot, sweet, bitter, aromatic, and salty. Szechuan food is divided into five different types: sumptuous banquet, ordinary banquet, popularized food, household-style food, and food snacks.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="story-section">
+      <div class="container">
+        <div class="quote-block reveal">
+          <p>"The freshness, quality of food at affordable pricing and pleasant service makes Judy's Sichuan Cuisine habit-forming."</p>
+          <cite>The Virginia Pilot</cite>
+        </div>
+      </div>
+    </section>
+
+    <section class="story-section">
+      <div class="container" style="text-align:center">
+        <div class="reveal">
+          <p class="eyebrow" style="color:var(--red);letter-spacing:.16em;text-transform:uppercase;font-size:12px;font-weight:500">Visit Us</p>
+          <h2 style="font-family:var(--font-serif);font-size:clamp(1.8rem,3vw,2.4rem);margin-bottom:1rem">Ready to taste Judy's?</h2>
+          <p style="max-width:42ch;margin:0 auto 1.5rem">Reserve a table at either of our Virginia locations, or browse the lunch and dinner menus.</p>
+          <div class="menu-ctas">
+            <a href="contact.html" class="btn">Make a Reservation</a>
+            <a href="menu.html" class="btn btn--outline">View Menus</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div>
+          <div class="footer__brand">
+            <img src="images/judys/logo-white.svg" alt="" />
+            <span>Judy's Sichuan Cuisine</span>
+          </div>
+          <h2>Newsletter</h2>
+          <p>Sign up for updates, offers, and delicious surprises and receive a $10 coupon.</p>
+          <form class="newsletter-form" data-newsletter>
+            <label class="sr-only" for="newsletter-email-story">Email</label>
+            <div class="newsletter-form__row">
+              <input id="newsletter-email-story" type="email" name="email" required placeholder="Your email" autocomplete="email" />
+              <button type="submit" class="btn btn--on-red">Sign Up</button>
+            </div>
+            <p class="newsletter-msg" data-newsletter-msg hidden></p>
+          </form>
+        </div>
+        <div>
+          <h2>Location</h2>
+          <p>328 Constitution Dr<br /><a href="tel:7574992810">(757) 499-2810</a></p>
+        </div>
+        <div>
+          <h2>Explore</h2>
+          <p><a href="index.html">Home</a><br /><a href="menu.html">Menu</a><br /><a href="contact.html">Contact &amp; Reservations</a></p>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <p>&copy; 2026 Judy's Sichuan Cuisine. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
