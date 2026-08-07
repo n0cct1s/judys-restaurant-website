@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Newsletter Admin | Judy's Sichuan Cuisine</title>
+  <link rel="icon" href="/images/judys/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body class="admin-body">
+  <div class="admin-shell" id="app">
+    <section class="admin-login" id="login-view">
+      <div class="admin-card">
+        <p class="eyebrow">Judy's Sichuan</p>
+        <h1>Newsletter Admin</h1>
+        <p>Sign in to manage subscribers and send group emails.</p>
+        <form id="login-form">
+          <div class="form-field">
+            <label for="password">Admin password</label>
+            <input id="password" name="password" type="password" required autocomplete="current-password" />
+          </div>
+          <button class="btn" type="submit">Sign In</button>
+          <p class="admin-msg" id="login-msg" hidden></p>
+        </form>
+      </div>
+    </section>
+
+    <section class="admin-dashboard" id="dashboard-view" hidden>
+      <header class="admin-top">
+        <div>
+          <p class="eyebrow">Judy's Sichuan</p>
+          <h1>Email Manager</h1>
+        </div>
+        <div class="admin-top__actions">
+          <a class="btn btn--outline" href="/">View Site</a>
+          <button class="btn" type="button" id="logout-btn">Log Out</button>
+        </div>
+      </header>
+
+      <div class="admin-stats" id="stats"></div>
+
+      <div class="admin-layout">
+        <div class="admin-card">
+          <div class="admin-card__head">
+            <h2>Subscribers</h2>
+            <div class="admin-filters">
+              <select id="status-filter">
+                <option value="">All groups</option>
+                <option value="subscribed">Subscribed</option>
+                <option value="unsubscribed">Unsubscribed</option>
+                <option value="bounced">Bounced</option>
+              </select>
+              <input id="search" type="search" placeholder="Search email" />
+            </div>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Group</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="subscriber-rows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-side">
+          <div class="admin-card">
+            <h2>Send to Subscribed</h2>
+            <p class="admin-help" id="mail-status"></p>
+            <p class="admin-help">Sending a coupon does not change anyone's group. People stay subscribed until they click Unsubscribe in the email.</p>
+            <form id="campaign-form">
+              <input type="hidden" name="targetStatus" value="subscribed" />
+              <div class="form-field">
+                <label for="subject">Subject</label>
+                <input id="subject" name="subject" type="text" required placeholder="Your $10 coupon is ready" />
+              </div>
+              <div class="form-field">
+                <label for="body">Message</label>
+                <textarea id="body" name="body" required placeholder="Write the email message..."></textarea>
+              </div>
+              <button class="btn" type="submit">Send Email to Subscribed</button>
+              <p class="admin-msg" id="campaign-msg" hidden></p>
+            </form>
+          </div>
+
+          <div class="admin-card">
+            <h2>Recent Campaigns</h2>
+            <ul class="campaign-list" id="campaign-list"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/admin/admin.js"></script>
+</body>
+</html>
