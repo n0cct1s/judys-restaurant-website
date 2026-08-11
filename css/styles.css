@@ -960,6 +960,14 @@ p {
   vertical-align: -0.05em;
 }
 
+.icon-spicy::before {
+  content: "\1F336";
+}
+
+.icon-veg::before {
+  content: "\1F343";
+}
+
 .menu-item {
   display: grid;
   grid-template-columns: auto 1fr;
