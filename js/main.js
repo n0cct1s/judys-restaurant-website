@@ -272,100 +272,195 @@
 
   showCouponPopup();
 
-  // Dish carousel: 3 visible on desktop, 1 on mobile; advance one by one
+  // Live Google rating (API when Node server is up; otherwise cached JSON)
+  const ratingRoot = document.querySelector("[data-google-rating]");
+  if (ratingRoot) {
+    const scoreEl = ratingRoot.querySelector("[data-google-score]");
+    const starsEl = ratingRoot.querySelector("[data-google-stars]");
+
+    const starString = (rating) => {
+      const full = Math.floor(rating);
+      const half = rating - full >= 0.4 && rating - full < 0.9;
+      let out = "★".repeat(Math.max(0, Math.min(5, full)));
+      if (half && out.length < 5) out += "☆";
+      while (out.length < 5) out += "☆";
+      // Prefer filled stars for rounded display
+      const rounded = Math.round(rating);
+      return "★".repeat(rounded) + "☆".repeat(5 - rounded);
+    };
+
+    const applyRating = (data) => {
+      const rating = Number(data?.rating);
+      if (!Number.isFinite(rating) || rating < 1 || rating > 5) return;
+      const label = rating.toFixed(1).replace(/\.0$/, ".0");
+      if (scoreEl) scoreEl.textContent = Number(rating).toFixed(1);
+      if (starsEl) starsEl.textContent = starString(rating);
+      ratingRoot.setAttribute("aria-label", `${label} Google rating`);
+      if (data?.mapsUrl) ratingRoot.setAttribute("href", data.mapsUrl);
+    };
+
+    const loadRating = async () => {
+      try {
+        const apiRes = await fetch("/api/google-rating", { headers: { Accept: "application/json" } });
+        if (apiRes.ok) {
+          const data = await apiRes.json();
+          applyRating(data);
+          return;
+        }
+      } catch {
+        // fall through to static cache
+      }
+      try {
+        const cacheRes = await fetch("js/google-rating.json", { headers: { Accept: "application/json" } });
+        if (cacheRes.ok) applyRating(await cacheRes.json());
+      } catch {
+        // keep HTML fallback
+      }
+    };
+
+    loadRating();
+  }
+
+  // Dish carousel: auto-scroll + touch/drag/swipe
   const slider = document.querySelector("[data-dish-slider]");
   if (slider) {
+    const viewport = slider.querySelector("[data-dish-viewport]") || slider.querySelector(".dish-slider__viewport");
     const track = slider.querySelector("[data-dish-track]");
-    const cards = [...slider.querySelectorAll(".dish-card")];
-    const prevBtn = slider.querySelector("[data-dish-prev]");
-    const nextBtn = slider.querySelector("[data-dish-next]");
-    const dotsWrap = slider.querySelector("[data-dish-dots]");
-    let index = 0;
+    if (viewport && track) {
+      let autoTimer = null;
+      let paused = false;
+      let dragging = false;
+      let startX = 0;
+      let startScroll = 0;
+      let moved = false;
 
-    const mq = window.matchMedia("(max-width: 960px)");
-    const getPerView = () => (mq.matches ? 1 : 3);
-    const getMaxIndex = () => Math.max(0, cards.length - getPerView());
+      const preferReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const buildDots = () => {
-      if (!dotsWrap) return;
-      dotsWrap.innerHTML = "";
-      const max = getMaxIndex();
-      for (let i = 0; i <= max; i += 1) {
-        const dot = document.createElement("button");
-        dot.type = "button";
-        dot.className = "dish-slider__dot" + (i === index ? " is-active" : "");
-        dot.setAttribute("aria-label", `Show dishes starting at ${i + 1}`);
-        dot.addEventListener("click", () => goTo(i));
-        dotsWrap.appendChild(dot);
-      }
-    };
+      const maxScroll = () => Math.max(0, track.scrollWidth - viewport.clientWidth);
 
-    const update = () => {
-      if (!track || !cards.length) return;
-      const max = getMaxIndex();
-      index = Math.max(0, Math.min(max, index));
+      const stepSize = () => {
+        const card = track.querySelector(".dish-card");
+        if (!card) return Math.max(180, viewport.clientWidth * 0.7);
+        const style = getComputedStyle(track);
+        const gap = Number.parseFloat(style.columnGap || style.gap || "0") || 0;
+        return card.getBoundingClientRect().width + gap;
+      };
 
-      const step =
-        cards.length > 1
-          ? cards[1].offsetLeft - cards[0].offsetLeft
-          : cards[0].offsetWidth;
-      track.style.transform = `translateX(-${index * step}px)`;
+      const pause = (ms = 5000) => {
+        paused = true;
+        window.clearTimeout(pause._t);
+        pause._t = window.setTimeout(() => {
+          paused = false;
+        }, ms);
+      };
 
-      if (prevBtn) prevBtn.disabled = index === 0;
-      if (nextBtn) nextBtn.disabled = index >= max;
-      dotsWrap?.querySelectorAll(".dish-slider__dot").forEach((dot, i) => {
-        dot.classList.toggle("is-active", i === index);
-      });
-    };
+      const tick = () => {
+        if (paused || dragging || preferReducedMotion) return;
+        const max = maxScroll();
+        if (max <= 4) return;
+        const next = viewport.scrollLeft + stepSize();
+        if (next >= max - 2) {
+          viewport.scrollTo({ left: 0, behavior: "smooth" });
+        } else {
+          viewport.scrollBy({ left: stepSize(), behavior: "smooth" });
+        }
+      };
 
-    const goTo = (i) => {
-      index = Math.max(0, Math.min(getMaxIndex(), i));
-      update();
-    };
+      const startAuto = () => {
+        window.clearInterval(autoTimer);
+        if (preferReducedMotion) return;
+        autoTimer = window.setInterval(tick, 3500);
+      };
 
-    const syncMode = () => {
-      buildDots();
-      update();
-    };
+      viewport.addEventListener(
+        "pointerdown",
+        (e) => {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          dragging = true;
+          moved = false;
+          startX = e.clientX;
+          startScroll = viewport.scrollLeft;
+          viewport.classList.add("is-dragging");
+          viewport.setPointerCapture?.(e.pointerId);
+          pause(6000);
+        },
+        { passive: true }
+      );
 
-    prevBtn?.addEventListener("click", () => goTo(index - 1));
-    nextBtn?.addEventListener("click", () => goTo(index + 1));
+      viewport.addEventListener(
+        "pointermove",
+        (e) => {
+          if (!dragging) return;
+          const dx = e.clientX - startX;
+          if (Math.abs(dx) > 4) moved = true;
+          viewport.scrollLeft = startScroll - dx;
+        },
+        { passive: true }
+      );
 
-    let startX = 0;
-    let deltaX = 0;
-    let dragging = false;
-
-    track?.addEventListener(
-      "touchstart",
-      (e) => {
-        dragging = true;
-        startX = e.touches[0].clientX;
-        deltaX = 0;
-      },
-      { passive: true }
-    );
-
-    track?.addEventListener(
-      "touchmove",
-      (e) => {
+      const endDrag = (e) => {
         if (!dragging) return;
-        deltaX = e.touches[0].clientX - startX;
-      },
-      { passive: true }
-    );
+        dragging = false;
+        viewport.classList.remove("is-dragging");
+        try {
+          viewport.releasePointerCapture?.(e.pointerId);
+        } catch {
+          // ignore
+        }
+        pause(6000);
+      };
 
-    track?.addEventListener("touchend", () => {
-      if (!dragging) return;
-      dragging = false;
-      if (Math.abs(deltaX) > 40) {
-        goTo(deltaX < 0 ? index + 1 : index - 1);
-      }
-      deltaX = 0;
-    });
+      viewport.addEventListener("pointerup", endDrag);
+      viewport.addEventListener("pointercancel", endDrag);
+      viewport.addEventListener("pointerleave", endDrag);
 
-    mq.addEventListener?.("change", syncMode);
-    window.addEventListener("resize", syncMode);
-    window.addEventListener("load", syncMode);
-    syncMode();
+      viewport.addEventListener(
+        "click",
+        (e) => {
+          if (moved) {
+            e.preventDefault();
+            e.stopPropagation();
+            moved = false;
+          }
+        },
+        true
+      );
+
+      viewport.addEventListener(
+        "wheel",
+        (e) => {
+          if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && Math.abs(e.deltaY) > 0) {
+            viewport.scrollLeft += e.deltaY;
+            pause(5000);
+          }
+        },
+        { passive: true }
+      );
+
+      viewport.addEventListener(
+        "touchstart",
+        () => {
+          pause(6000);
+        },
+        { passive: true }
+      );
+
+      slider.addEventListener("mouseenter", () => {
+        paused = true;
+      });
+      slider.addEventListener("mouseleave", () => {
+        paused = false;
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          window.clearInterval(autoTimer);
+        } else {
+          startAuto();
+        }
+      });
+
+      startAuto();
+    }
   }
 })();

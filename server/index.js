@@ -1,4 +1,5 @@
 import path from "node:path";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import session from "express-session";
@@ -288,6 +289,144 @@ app.post("/api/admin/campaigns/send", requireAdmin, async (req, res) => {
       ? "SMTP is not configured, so emails were logged locally (dry run). Subscribers stay in the subscribed group."
       : `Sent to ${sentCount} of ${recipients.length} subscribed emails. Groups were not changed.`,
   });
+});
+
+const MAPS_URL = "https://maps.app.goo.gl/V5uv4d8aqbzg4jXZA";
+const MAPS_PLACE_URL =
+  "https://www.google.com/maps/place/Judy's+Sichuan+Cuisine/@36.8463651,-76.1293899,17z/data=!4m6!3m5!1s0x89ba950a64b7fcff:0x80e31a6816a82eb6!8m2!3d36.8463651!4d-76.1293899";
+const RATING_CACHE_FILE = path.join(rootDir, "js", "google-rating.json");
+const RATING_TTL_MS = 6 * 60 * 60 * 1000;
+let ratingMemoryCache = null;
+
+function readRatingFile() {
+  try {
+    return JSON.parse(fs.readFileSync(RATING_CACHE_FILE, "utf8"));
+  } catch {
+    return { rating: 4.5, reviewCount: null, mapsUrl: MAPS_URL, source: "fallback" };
+  }
+}
+
+function writeRatingFile(payload) {
+  try {
+    fs.writeFileSync(RATING_CACHE_FILE, JSON.stringify(payload, null, 2) + "\n", "utf8");
+  } catch {
+    // ignore write failures on read-only hosts
+  }
+}
+
+function parseRatingFromHtml(html) {
+  const patterns = [
+    /Judy's Sichuan Cuisine[^]{0,120}?([1-5]\.\d)/i,
+    /"([1-5]\.\d)"[^]{0,40}?"([0-9,]+)"[^]{0,80}?review/i,
+    /aria-label="([1-5]\.\d)\s*stars?/i,
+    /([1-5]\.\d)\s*stars?/i,
+  ];
+  for (const re of patterns) {
+    const m = html.match(re);
+    if (!m) continue;
+    const rating = Number(m[1]);
+    if (rating >= 1 && rating <= 5) {
+      const reviewCount = m[2] ? Number(String(m[2]).replace(/,/g, "")) : null;
+      return { rating, reviewCount: Number.isFinite(reviewCount) ? reviewCount : null };
+    }
+  }
+  return null;
+}
+
+async function fetchRatingFromPlacesApi() {
+  const key = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
+  if (!key) return null;
+
+  const findUrl = new URL("https://maps.googleapis.com/maps/api/place/findplacefromtext/json");
+  findUrl.searchParams.set("input", "Judy's Sichuan Cuisine Virginia Beach");
+  findUrl.searchParams.set("inputtype", "textquery");
+  findUrl.searchParams.set("fields", "place_id,name");
+  findUrl.searchParams.set("key", key);
+
+  const found = await fetch(findUrl).then((r) => r.json());
+  const placeId = found?.candidates?.[0]?.place_id;
+  if (!placeId) return null;
+
+  const detailsUrl = new URL("https://maps.googleapis.com/maps/api/place/details/json");
+  detailsUrl.searchParams.set("place_id", placeId);
+  detailsUrl.searchParams.set("fields", "rating,user_ratings_total,url");
+  detailsUrl.searchParams.set("key", key);
+
+  const details = await fetch(detailsUrl).then((r) => r.json());
+  const rating = Number(details?.result?.rating);
+  if (!Number.isFinite(rating)) return null;
+  return {
+    rating,
+    reviewCount: details?.result?.user_ratings_total ?? null,
+    mapsUrl: details?.result?.url || MAPS_URL,
+    source: "places-api",
+  };
+}
+
+async function fetchRatingFromMapsPage() {
+  const res = await fetch(MAPS_PLACE_URL, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+      "Accept-Language": "en-US,en;q=0.9",
+    },
+  });
+  if (!res.ok) return null;
+  const html = await res.text();
+  const parsed = parseRatingFromHtml(html);
+  if (!parsed) return null;
+  return { ...parsed, mapsUrl: MAPS_URL, source: "google-maps" };
+}
+
+async function getLiveGoogleRating(force = false) {
+  const now = Date.now();
+  if (!force && ratingMemoryCache && now - ratingMemoryCache.fetchedAt < RATING_TTL_MS) {
+    return ratingMemoryCache.data;
+  }
+
+  const fileCache = readRatingFile();
+  const fileAge = fileCache.updatedAt ? now - Date.parse(fileCache.updatedAt) : Infinity;
+  if (!force && Number.isFinite(fileAge) && fileAge < RATING_TTL_MS && fileCache.rating) {
+    ratingMemoryCache = { fetchedAt: now, data: fileCache };
+    return fileCache;
+  }
+
+  let live = null;
+  try {
+    live = await fetchRatingFromPlacesApi();
+  } catch {
+    live = null;
+  }
+  if (!live) {
+    try {
+      live = await fetchRatingFromMapsPage();
+    } catch {
+      live = null;
+    }
+  }
+
+  const payload = {
+    rating: live?.rating ?? fileCache.rating ?? 4.5,
+    reviewCount: live?.reviewCount ?? fileCache.reviewCount ?? null,
+    mapsUrl: live?.mapsUrl || MAPS_URL,
+    source: live?.source || fileCache.source || "fallback",
+    updatedAt: new Date().toISOString(),
+  };
+  writeRatingFile(payload);
+  ratingMemoryCache = { fetchedAt: now, data: payload };
+  return payload;
+}
+
+app.get("/api/google-rating", async (req, res) => {
+  try {
+    const force = String(req.query.refresh || "") === "1";
+    const data = await getLiveGoogleRating(force);
+    res.set("Cache-Control", "public, max-age=300");
+    res.json({ ok: true, ...data });
+  } catch (err) {
+    const fallback = readRatingFile();
+    res.json({ ok: true, ...fallback, source: "fallback", error: err.message });
+  }
 });
 
 app.use("/admin", express.static(path.join(rootDir, "admin")));
