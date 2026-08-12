@@ -272,49 +272,48 @@
 
   showCouponPopup();
 
-  // Live Google rating (API when Node server is up; otherwise cached JSON)
+  // Live Google rating (static JSON on Pages; API when Node server is up)
   const ratingRoot = document.querySelector("[data-google-rating]");
   if (ratingRoot) {
     const scoreEl = ratingRoot.querySelector("[data-google-score]");
     const starsEl = ratingRoot.querySelector("[data-google-stars]");
 
     const starString = (rating) => {
-      const full = Math.floor(rating);
-      const half = rating - full >= 0.4 && rating - full < 0.9;
-      let out = "★".repeat(Math.max(0, Math.min(5, full)));
-      if (half && out.length < 5) out += "☆";
-      while (out.length < 5) out += "☆";
-      // Prefer filled stars for rounded display
-      const rounded = Math.round(rating);
-      return "★".repeat(rounded) + "☆".repeat(5 - rounded);
+      const rounded = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
+      return "\u2605".repeat(rounded) + "\u2606".repeat(5 - rounded);
     };
 
     const applyRating = (data) => {
       const rating = Number(data?.rating);
       if (!Number.isFinite(rating) || rating < 1 || rating > 5) return;
-      const label = rating.toFixed(1).replace(/\.0$/, ".0");
-      if (scoreEl) scoreEl.textContent = Number(rating).toFixed(1);
+      if (scoreEl) scoreEl.textContent = rating.toFixed(1);
       if (starsEl) starsEl.textContent = starString(rating);
-      ratingRoot.setAttribute("aria-label", `${label} Google rating`);
+      ratingRoot.setAttribute("aria-label", `${rating.toFixed(1)} Google rating`);
       if (data?.mapsUrl) ratingRoot.setAttribute("href", data.mapsUrl);
+      ratingRoot.hidden = false;
+    };
+
+    const loadJson = async (url) => {
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      if (!res.ok) return null;
+      const type = res.headers.get("content-type") || "";
+      if (!type.includes("json")) return null;
+      return res.json();
     };
 
     const loadRating = async () => {
-      try {
-        const apiRes = await fetch("/api/google-rating", { headers: { Accept: "application/json" } });
-        if (apiRes.ok) {
-          const data = await apiRes.json();
-          applyRating(data);
-          return;
+      // Prefer static cache first so GitHub Pages always shows a rating
+      const sources = ["js/google-rating.json", "api/google-rating", "/api/google-rating"];
+      for (const url of sources) {
+        try {
+          const data = await loadJson(url);
+          if (data && data.rating != null) {
+            applyRating(data);
+            return;
+          }
+        } catch {
+          // try next source
         }
-      } catch {
-        // fall through to static cache
-      }
-      try {
-        const cacheRes = await fetch("js/google-rating.json", { headers: { Accept: "application/json" } });
-        if (cacheRes.ok) applyRating(await cacheRes.json());
-      } catch {
-        // keep HTML fallback
       }
     };
 
