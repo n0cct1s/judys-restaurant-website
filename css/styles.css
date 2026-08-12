@@ -345,13 +345,20 @@ p {
 .hero-badge {
   color: var(--gold);
   line-height: 0;
-  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.35));
+  flex: 0 0 auto;
+  filter: drop-shadow(0 2px 12px rgba(212, 168, 75, 0.22));
 }
 
 .hero-badge svg {
-  width: clamp(4.25rem, 7vw, 5.75rem);
-  height: clamp(4.25rem, 7vw, 5.75rem);
+  display: none;
+}
+
+.hero-badge img {
+  width: clamp(4.75rem, 8vw, 6.5rem);
+  height: auto;
+  aspect-ratio: 1;
   display: block;
+  object-fit: contain;
 }
 
 .hero__title {
@@ -1627,9 +1634,8 @@ body.coupon-modal-open {
     gap: 0.65rem;
   }
 
-  .hero-badge svg {
-    width: 68px;
-    height: 68px;
+  .hero-badge img {
+    width: 4.5rem;
   }
 
   .hero__title-top {
