@@ -1824,23 +1824,26 @@ body.coupon-modal-open {
   .dish-slider__viewport {
     touch-action: pan-x;
     scroll-snap-type: x mandatory;
-    container-type: inline-size;
-    container-name: dish-viewport;
+    overflow-x: auto;
   }
 
   .dish-grid {
+    display: flex;
+    flex-flow: row nowrap;
     gap: 0.5rem;
     width: max-content;
-    min-width: 0;
+    min-width: max-content;
   }
 
   .dish-card {
-    /* Size from the visible viewport, not the scrolling track */
-    flex: 0 0 calc((100cqw - 0.5rem) / 2);
-    width: calc((100cqw - 0.5rem) / 2);
-    max-width: none;
+    /* Half screen minus container padding (~0.75rem each side) and gap share */
+    flex: 0 0 calc(50vw - 1.25rem);
+    width: calc(50vw - 1.25rem);
+    max-width: calc(50vw - 1.25rem);
+    min-width: calc(50vw - 1.25rem);
     aspect-ratio: 4 / 3;
     height: auto;
+    max-height: none;
     scroll-snap-align: start;
   }
 
@@ -1957,11 +1960,13 @@ body.coupon-modal-open {
   }
 
   .dish-card {
-    flex: 0 0 calc((100cqw - 0.4rem) / 2);
-    width: calc((100cqw - 0.4rem) / 2);
-    max-width: none;
+    flex: 0 0 calc(50vw - 1.15rem);
+    width: calc(50vw - 1.15rem);
+    max-width: calc(50vw - 1.15rem);
+    min-width: calc(50vw - 1.15rem);
     aspect-ratio: 4 / 3;
     height: auto;
+    max-height: none;
   }
 
   .dish-card__media {
