@@ -1836,12 +1836,12 @@ body.coupon-modal-open {
   }
 
   .dish-card {
-    /* Half screen minus container padding (~0.75rem each side) and gap share */
-    flex: 0 0 calc(50vw - 1.25rem);
-    width: calc(50vw - 1.25rem);
-    max-width: calc(50vw - 1.25rem);
-    min-width: calc(50vw - 1.25rem);
-    aspect-ratio: 4 / 3;
+    /* Two-up, slightly narrower + taller so cover crops left/right */
+    flex: 0 0 calc(46vw - 1.1rem);
+    width: calc(46vw - 1.1rem);
+    max-width: calc(46vw - 1.1rem);
+    min-width: calc(46vw - 1.1rem);
+    aspect-ratio: 3 / 4;
     height: auto;
     max-height: none;
     scroll-snap-align: start;
@@ -1960,11 +1960,11 @@ body.coupon-modal-open {
   }
 
   .dish-card {
-    flex: 0 0 calc(50vw - 1.15rem);
-    width: calc(50vw - 1.15rem);
-    max-width: calc(50vw - 1.15rem);
-    min-width: calc(50vw - 1.15rem);
-    aspect-ratio: 4 / 3;
+    flex: 0 0 calc(45vw - 1rem);
+    width: calc(45vw - 1rem);
+    max-width: calc(45vw - 1rem);
+    min-width: calc(45vw - 1rem);
+    aspect-ratio: 3 / 4;
     height: auto;
     max-height: none;
   }
