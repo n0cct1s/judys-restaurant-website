@@ -320,11 +320,13 @@
     loadRating();
   }
 
-  // Dish carousel: auto-scroll + touch/drag/swipe
+  // Dish carousel: auto-scroll + touch/drag/swipe + desktop arrows
   const slider = document.querySelector("[data-dish-slider]");
   if (slider) {
     const viewport = slider.querySelector("[data-dish-viewport]") || slider.querySelector(".dish-slider__viewport");
     const track = slider.querySelector("[data-dish-track]");
+    const prevBtn = slider.querySelector("[data-dish-prev]");
+    const nextBtn = slider.querySelector("[data-dish-next]");
     if (viewport && track) {
       let autoTimer = null;
       let paused = false;
@@ -345,6 +347,13 @@
         return card.getBoundingClientRect().width + gap;
       };
 
+      const updateButtons = () => {
+        const max = maxScroll();
+        const left = viewport.scrollLeft;
+        if (prevBtn) prevBtn.disabled = left <= 2;
+        if (nextBtn) nextBtn.disabled = left >= max - 2;
+      };
+
       const pause = (ms = 5000) => {
         paused = true;
         window.clearTimeout(pause._t);
@@ -353,16 +362,23 @@
         }, ms);
       };
 
-      const tick = () => {
-        if (paused || dragging || preferReducedMotion) return;
+      const scrollByStep = (dir) => {
         const max = maxScroll();
         if (max <= 4) return;
-        const next = viewport.scrollLeft + stepSize();
-        if (next >= max - 2) {
+        const next = viewport.scrollLeft + dir * stepSize();
+        if (dir > 0 && next >= max - 2) {
           viewport.scrollTo({ left: 0, behavior: "smooth" });
+        } else if (dir < 0 && next <= 2) {
+          viewport.scrollTo({ left: max, behavior: "smooth" });
         } else {
-          viewport.scrollBy({ left: stepSize(), behavior: "smooth" });
+          viewport.scrollBy({ left: dir * stepSize(), behavior: "smooth" });
         }
+        pause(6000);
+      };
+
+      const tick = () => {
+        if (paused || dragging || preferReducedMotion) return;
+        scrollByStep(1);
       };
 
       const startAuto = () => {
@@ -370,6 +386,12 @@
         if (preferReducedMotion) return;
         autoTimer = window.setInterval(tick, 3500);
       };
+
+      prevBtn?.addEventListener("click", () => scrollByStep(-1));
+      nextBtn?.addEventListener("click", () => scrollByStep(1));
+      viewport.addEventListener("scroll", updateButtons, { passive: true });
+      window.addEventListener("resize", updateButtons);
+      updateButtons();
 
       viewport.addEventListener(
         "pointerdown",
@@ -407,6 +429,7 @@
           // ignore
         }
         pause(6000);
+        updateButtons();
       };
 
       viewport.addEventListener("pointerup", endDrag);
@@ -431,6 +454,7 @@
           if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && Math.abs(e.deltaY) > 0) {
             viewport.scrollLeft += e.deltaY;
             pause(5000);
+            updateButtons();
           }
         },
         { passive: true }
