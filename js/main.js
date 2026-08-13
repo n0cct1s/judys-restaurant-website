@@ -348,10 +348,9 @@
       };
 
       const updateButtons = () => {
-        const max = maxScroll();
-        const left = viewport.scrollLeft;
-        if (prevBtn) prevBtn.disabled = left <= 2;
-        if (nextBtn) nextBtn.disabled = left >= max - 2;
+        // Infinite loop: arrows stay enabled at both ends
+        if (prevBtn) prevBtn.disabled = false;
+        if (nextBtn) nextBtn.disabled = false;
       };
 
       const pause = (ms = 5000) => {
@@ -362,16 +361,28 @@
         }, ms);
       };
 
+      const wrapTo = (left) => {
+        viewport.scrollTo({ left, behavior: "smooth" });
+      };
+
       const scrollByStep = (dir) => {
         const max = maxScroll();
         if (max <= 4) return;
-        const next = viewport.scrollLeft + dir * stepSize();
-        if (dir > 0 && next >= max - 2) {
-          viewport.scrollTo({ left: 0, behavior: "smooth" });
-        } else if (dir < 0 && next <= 2) {
-          viewport.scrollTo({ left: max, behavior: "smooth" });
+        const left = viewport.scrollLeft;
+        const step = stepSize();
+        if (dir > 0 && left >= max - 2) {
+          wrapTo(0);
+        } else if (dir < 0 && left <= 2) {
+          wrapTo(max);
         } else {
-          viewport.scrollBy({ left: dir * stepSize(), behavior: "smooth" });
+          const next = left + dir * step;
+          if (dir > 0 && next >= max - 2) {
+            wrapTo(max);
+          } else if (dir < 0 && next <= 2) {
+            wrapTo(0);
+          } else {
+            viewport.scrollBy({ left: dir * step, behavior: "smooth" });
+          }
         }
         pause(6000);
       };
@@ -428,6 +439,20 @@
         } catch {
           // ignore
         }
+
+        // At either end, keep swiping to loop (last → first, first → last)
+        if (moved) {
+          const max = maxScroll();
+          const left = viewport.scrollLeft;
+          const dx = (typeof e.clientX === "number" ? e.clientX : startX) - startX;
+          const swipePast = 28;
+          if (left >= max - 2 && dx < -swipePast) {
+            wrapTo(0);
+          } else if (left <= 2 && dx > swipePast) {
+            wrapTo(max);
+          }
+        }
+
         pause(6000);
         updateButtons();
       };
