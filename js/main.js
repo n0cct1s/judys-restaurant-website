@@ -320,7 +320,7 @@
     loadRating();
   }
 
-  // Dish carousel: auto-scroll + touch/drag/swipe + desktop arrows
+  // Dish carousel: seamless ring (3× track) + auto-scroll + swipe + arrows
   const slider = document.querySelector("[data-dish-slider]");
   if (slider) {
     const viewport = slider.querySelector("[data-dish-viewport]") || slider.querySelector(".dish-slider__viewport");
@@ -328,29 +328,69 @@
     const prevBtn = slider.querySelector("[data-dish-prev]");
     const nextBtn = slider.querySelector("[data-dish-next]");
     if (viewport && track) {
+      const originals = Array.from(track.children);
+      const setCount = originals.length;
+      if (setCount < 2) {
+        // fall through — nothing to ring
+      } else {
+      // [copy][originals][copy] — stay in the middle copy for a continuous ring
+      const headFrag = document.createDocumentFragment();
+      const tailFrag = document.createDocumentFragment();
+      originals.forEach((card) => {
+        const head = card.cloneNode(true);
+        const tail = card.cloneNode(true);
+        head.setAttribute("aria-hidden", "true");
+        tail.setAttribute("aria-hidden", "true");
+        headFrag.appendChild(head);
+        tailFrag.appendChild(tail);
+      });
+      track.insertBefore(headFrag, track.firstChild);
+      track.appendChild(tailFrag);
+
       let autoTimer = null;
       let paused = false;
       let dragging = false;
       let startX = 0;
       let startScroll = 0;
       let moved = false;
+      let setWidth = 0;
+      let jumping = false;
 
       const preferReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      const maxScroll = () => Math.max(0, track.scrollWidth - viewport.clientWidth);
-
       const stepSize = () => {
-        const card = track.querySelector(".dish-card");
+        const card = track.querySelector(".dish-card:not([aria-hidden='true'])") || track.querySelector(".dish-card");
         if (!card) return Math.max(180, viewport.clientWidth * 0.7);
         const style = getComputedStyle(track);
         const gap = Number.parseFloat(style.columnGap || style.gap || "0") || 0;
         return card.getBoundingClientRect().width + gap;
       };
 
-      const updateButtons = () => {
-        // Infinite loop: arrows stay enabled at both ends
-        if (prevBtn) prevBtn.disabled = false;
-        if (nextBtn) nextBtn.disabled = false;
+      const measureSetWidth = () => {
+        // Middle set starts at index setCount
+        const cards = Array.from(track.children).slice(setCount, setCount * 2);
+        if (!cards.length) {
+          setWidth = 0;
+          return;
+        }
+        const first = cards[0];
+        const last = cards[cards.length - 1];
+        setWidth = last.offsetLeft + last.offsetWidth - first.offsetLeft;
+      };
+
+      // Keep scroll in the middle copy — last flows into first with no teleport flash
+      const normalizeRing = () => {
+        if (jumping || setWidth <= 0) return;
+        const left = viewport.scrollLeft;
+        if (left >= setWidth * 2) {
+          jumping = true;
+          viewport.scrollLeft = left - setWidth;
+          jumping = false;
+        } else if (left < setWidth) {
+          jumping = true;
+          viewport.scrollLeft = left + setWidth;
+          jumping = false;
+        }
       };
 
       const pause = (ms = 5000) => {
@@ -361,29 +401,11 @@
         }, ms);
       };
 
-      const wrapTo = (left) => {
-        viewport.scrollTo({ left, behavior: "smooth" });
-      };
-
       const scrollByStep = (dir) => {
-        const max = maxScroll();
-        if (max <= 4) return;
-        const left = viewport.scrollLeft;
-        const step = stepSize();
-        if (dir > 0 && left >= max - 2) {
-          wrapTo(0);
-        } else if (dir < 0 && left <= 2) {
-          wrapTo(max);
-        } else {
-          const next = left + dir * step;
-          if (dir > 0 && next >= max - 2) {
-            wrapTo(max);
-          } else if (dir < 0 && next <= 2) {
-            wrapTo(0);
-          } else {
-            viewport.scrollBy({ left: dir * step, behavior: "smooth" });
-          }
-        }
+        if (setWidth <= 0) return;
+        normalizeRing();
+        viewport.scrollBy({ left: dir * stepSize(), behavior: "smooth" });
+        window.setTimeout(normalizeRing, 450);
         pause(6000);
       };
 
@@ -398,11 +420,35 @@
         autoTimer = window.setInterval(tick, 3500);
       };
 
+      if (prevBtn) prevBtn.disabled = false;
+      if (nextBtn) nextBtn.disabled = false;
       prevBtn?.addEventListener("click", () => scrollByStep(-1));
       nextBtn?.addEventListener("click", () => scrollByStep(1));
-      viewport.addEventListener("scroll", updateButtons, { passive: true });
-      window.addEventListener("resize", updateButtons);
-      updateButtons();
+
+      viewport.addEventListener(
+        "scroll",
+        () => {
+          if (!dragging && !jumping) normalizeRing();
+        },
+        { passive: true }
+      );
+
+      const remountRing = () => {
+        measureSetWidth();
+        if (setWidth <= 0) return;
+        jumping = true;
+        // Land on the middle copy, same offset within the set
+        const offset = ((viewport.scrollLeft % setWidth) + setWidth) % setWidth;
+        viewport.scrollLeft = setWidth + offset;
+        jumping = false;
+      };
+
+      window.addEventListener("resize", remountRing);
+      // Measure after layout
+      requestAnimationFrame(() => {
+        remountRing();
+        startAuto();
+      });
 
       viewport.addEventListener(
         "pointerdown",
@@ -410,6 +456,7 @@
           if (e.pointerType === "mouse" && e.button !== 0) return;
           dragging = true;
           moved = false;
+          normalizeRing();
           startX = e.clientX;
           startScroll = viewport.scrollLeft;
           viewport.classList.add("is-dragging");
@@ -425,7 +472,19 @@
           if (!dragging) return;
           const dx = e.clientX - startX;
           if (Math.abs(dx) > 4) moved = true;
-          viewport.scrollLeft = startScroll - dx;
+          let next = startScroll - dx;
+          // Keep drag math inside the middle band while swiping across the seam
+          if (setWidth > 0) {
+            while (next >= setWidth * 2) {
+              next -= setWidth;
+              startScroll -= setWidth;
+            }
+            while (next < setWidth) {
+              next += setWidth;
+              startScroll += setWidth;
+            }
+          }
+          viewport.scrollLeft = next;
         },
         { passive: true }
       );
@@ -439,22 +498,8 @@
         } catch {
           // ignore
         }
-
-        // At either end, keep swiping to loop (last → first, first → last)
-        if (moved) {
-          const max = maxScroll();
-          const left = viewport.scrollLeft;
-          const dx = (typeof e.clientX === "number" ? e.clientX : startX) - startX;
-          const swipePast = 28;
-          if (left >= max - 2 && dx < -swipePast) {
-            wrapTo(0);
-          } else if (left <= 2 && dx > swipePast) {
-            wrapTo(max);
-          }
-        }
-
+        normalizeRing();
         pause(6000);
-        updateButtons();
       };
 
       viewport.addEventListener("pointerup", endDrag);
@@ -478,8 +523,8 @@
         (e) => {
           if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && Math.abs(e.deltaY) > 0) {
             viewport.scrollLeft += e.deltaY;
+            normalizeRing();
             pause(5000);
-            updateButtons();
           }
         },
         { passive: true }
@@ -507,8 +552,7 @@
           startAuto();
         }
       });
-
-      startAuto();
+      }
     }
   }
 })();
