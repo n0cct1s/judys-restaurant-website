@@ -1825,6 +1825,8 @@ body.coupon-modal-open {
     touch-action: pan-x;
     scroll-snap-type: x mandatory;
     overflow-x: auto;
+    container-type: inline-size;
+    container-name: dish-viewport;
   }
 
   .dish-grid {
@@ -1836,12 +1838,16 @@ body.coupon-modal-open {
   }
 
   .dish-card {
-    /* Two-up, slightly narrower + taller so cover crops left/right */
-    flex: 0 0 calc(46vw - 1.1rem);
-    width: calc(46vw - 1.1rem);
-    max-width: calc(46vw - 1.1rem);
-    min-width: calc(46vw - 1.1rem);
-    aspect-ratio: 3 / 4;
+    /* Exactly two square cards per phone width (vw fallback, then container) */
+    flex: 0 0 calc(50vw - 0.85rem);
+    width: calc(50vw - 0.85rem);
+    max-width: calc(50vw - 0.85rem);
+    min-width: calc(50vw - 0.85rem);
+    flex: 0 0 calc(50cqi - 0.25rem);
+    width: calc(50cqi - 0.25rem);
+    max-width: calc(50cqi - 0.25rem);
+    min-width: calc(50cqi - 0.25rem);
+    aspect-ratio: 1 / 1;
     height: auto;
     max-height: none;
     scroll-snap-align: start;
@@ -1960,11 +1966,15 @@ body.coupon-modal-open {
   }
 
   .dish-card {
-    flex: 0 0 calc(45vw - 1rem);
-    width: calc(45vw - 1rem);
-    max-width: calc(45vw - 1rem);
-    min-width: calc(45vw - 1rem);
-    aspect-ratio: 3 / 4;
+    flex: 0 0 calc(50vw - 0.75rem);
+    width: calc(50vw - 0.75rem);
+    max-width: calc(50vw - 0.75rem);
+    min-width: calc(50vw - 0.75rem);
+    flex: 0 0 calc(50cqi - 0.2rem);
+    width: calc(50cqi - 0.2rem);
+    max-width: calc(50cqi - 0.2rem);
+    min-width: calc(50cqi - 0.2rem);
+    aspect-ratio: 1 / 1;
     height: auto;
     max-height: none;
   }
