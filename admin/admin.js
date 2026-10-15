@@ -20,7 +20,14 @@
   const apiUrl = (path) => `${apiBase}${path.startsWith("/") ? path : `/${path}`}`;
 
   let sessionTimer = null;
+  let authToken = sessionStorage.getItem("judys_admin_token") || "";
   const DEFAULT_SESSION_MS = 1000 * 60 * 60 * 2; // 2 hours
+
+  const setAuthToken = (token) => {
+    authToken = token || "";
+    if (authToken) sessionStorage.setItem("judys_admin_token", authToken);
+    else sessionStorage.removeItem("judys_admin_token");
+  };
 
   const showMsg = (el, text, ok = true) => {
     if (!el) return;
@@ -39,6 +46,7 @@
 
   const forceLogin = (message) => {
     clearSessionTimer();
+    setAuthToken("");
     setAuthView(false);
     if (message) showMsg(loginMsg, message, false);
   };
@@ -62,17 +70,36 @@
 
   const api = async (path, options = {}) => {
     const url = path.startsWith("http") ? path : apiUrl(path);
-    const res = await fetch(url, {
-      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-      credentials: "include",
-      ...options,
-    });
+    const headers = {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    };
+    if (authToken) headers.Authorization = `Bearer ${authToken}`;
+    let res;
+    try {
+      res = await fetch(url, {
+        headers,
+        credentials: "include",
+        ...options,
+      });
+    } catch {
+      throw new Error(
+        "Cannot reach the API. Deploy the Cloudflare Worker (see worker/README.md) or run npm start locally."
+      );
+    }
     const data = await res.json().catch(() => ({}));
     if (res.status === 401 && !url.includes("/api/admin/login")) {
       forceLogin(data.error || "Session expired. Please log in again.");
       throw new Error(data.error || "Unauthorized");
     }
-    if (!res.ok) throw new Error(data.error || "Request failed");
+    if (!res.ok) {
+      throw new Error(
+        data.error ||
+          (res.status === 404 || res.status === 405
+            ? "API is not connected on this site yet. Deploy worker/ (Cloudflare) first."
+            : "Request failed")
+      );
+    }
     return data;
   };
 
@@ -196,6 +223,7 @@
         method: "POST",
         body: JSON.stringify({ password }),
       });
+      if (result.token) setAuthToken(result.token);
       loginMsg.hidden = true;
       setAuthView(true);
       scheduleSessionExpiry(result.expiresInMs);

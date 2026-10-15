@@ -139,7 +139,14 @@
       );
     }
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(json.error || "Unable to subscribe right now.");
+    if (!res.ok) {
+      throw new Error(
+        json.error ||
+          (res.status === 404 || res.status === 405
+            ? "Signup API is not connected yet on this website."
+            : "Unable to subscribe right now.")
+      );
+    }
     return json;
   };
 
