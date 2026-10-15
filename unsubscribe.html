@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Unsubscribe | Judy's Sichuan Cuisine</title>
   <link rel="icon" href="images/judys/logo.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="css/styles.css?v=20260813c" />
+  <link rel="stylesheet" href="css/styles.css?v=20261015a" />
 </head>
 <body>
   <header class="header is-solid" id="header">
@@ -47,6 +47,7 @@
     </section>
   </main>
 
+  <script src="js/config.js?v=20261015a"></script>
   <script>
     (() => {
       const form = document.getElementById("unsubscribe-form");
@@ -56,12 +57,17 @@
       const preset = params.get("email");
       if (preset) emailInput.value = preset;
 
+      const apiBase = String(window.JUDYS_CONFIG?.apiBase || "")
+        .trim()
+        .replace(/\/+$/, "");
+      const apiUrl = (path) => `${apiBase}${path.startsWith("/") ? path : `/${path}`}`;
+
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
         msg.hidden = true;
         msg.classList.remove("is-visible");
         try {
-          const res = await fetch("/api/newsletter/unsubscribe", {
+          const res = await fetch(apiUrl("/api/newsletter/unsubscribe"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: emailInput.value.trim() }),
@@ -73,7 +79,7 @@
           msg.classList.add("is-visible");
           form.querySelector("button").disabled = true;
         } catch (err) {
-          msg.textContent = err.message;
+          msg.textContent = err.message || "Unable to reach the server.";
           msg.hidden = false;
           msg.classList.add("is-visible");
           msg.style.background = "#f3d9d8";

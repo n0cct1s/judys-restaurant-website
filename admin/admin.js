@@ -14,6 +14,11 @@
   const campaignList = document.getElementById("campaign-list");
   const mailStatus = document.getElementById("mail-status");
 
+  const apiBase = String(window.JUDYS_CONFIG?.apiBase || "")
+    .trim()
+    .replace(/\/+$/, "");
+  const apiUrl = (path) => `${apiBase}${path.startsWith("/") ? path : `/${path}`}`;
+
   let sessionTimer = null;
   const DEFAULT_SESSION_MS = 1000 * 60 * 60 * 2; // 2 hours
 
@@ -45,20 +50,21 @@
       Number(expiresInMs) > 0 ? Number(expiresInMs) : DEFAULT_SESSION_MS
     );
     sessionTimer = setTimeout(() => {
-      fetch("/api/admin/logout", {
+      fetch(apiUrl("/api/admin/logout"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
+        credentials: "include",
         body: "{}",
       }).catch(() => {});
       forceLogin("Session expired after 2 hours. Please log in again.");
     }, wait);
   };
 
-  const api = async (url, options = {}) => {
+  const api = async (path, options = {}) => {
+    const url = path.startsWith("http") ? path : apiUrl(path);
     const res = await fetch(url, {
       headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-      credentials: "same-origin",
+      credentials: "include",
       ...options,
     });
     const data = await res.json().catch(() => ({}));

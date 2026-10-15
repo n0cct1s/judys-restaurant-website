@@ -110,6 +110,11 @@
   });
 
   // Newsletter signup (footer + popup)
+  const apiBase = String(window.JUDYS_CONFIG?.apiBase || "")
+    .trim()
+    .replace(/\/+$/, "");
+  const apiUrl = (path) => `${apiBase}${path.startsWith("/") ? path : `/${path}`}`;
+
   const isValidEmail = (email) => {
     const value = String(email || "").trim().toLowerCase();
     if (!value || value.length > 254 || value.includes("..")) return false;
@@ -118,12 +123,21 @@
     );
   };
 
-  const subscribeEmail = async (email, company = "") => {
-    const res = await fetch("/api/newsletter/subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, company }),
-    });
+  const subscribeEmail = async (email, company = "", source = "newsletter") => {
+    let res;
+    try {
+      res = await fetch(apiUrl("/api/newsletter/subscribe"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, company, source }),
+      });
+    } catch {
+      throw new Error(
+        apiBase
+          ? "Unable to reach the signup server. Please try again later."
+          : "Newsletter signup needs the API running (set js/config.js apiBase, or npm start)."
+      );
+    }
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(json.error || "Unable to subscribe right now.");
     return json;
@@ -152,7 +166,7 @@
       }
 
       try {
-        const json = await subscribeEmail(email, company);
+        const json = await subscribeEmail(email, company, "newsletter");
         newsletterForm.reset();
         if (msg) {
           msg.hidden = false;
@@ -163,9 +177,7 @@
         if (msg) {
           msg.hidden = false;
           msg.classList.add("is-error");
-          msg.textContent =
-            err.message ||
-            "Newsletter signup needs the site server running (npm start).";
+          msg.textContent = err.message || "Unable to subscribe right now.";
         }
       }
     });
@@ -250,7 +262,7 @@
         return;
       }
       try {
-        const json = await subscribeEmail(email, company);
+        const json = await subscribeEmail(email, company, "coupon");
         if (msg) {
           msg.hidden = false;
           msg.textContent =
@@ -303,7 +315,11 @@
 
     const loadRating = async () => {
       // Prefer static cache first so GitHub Pages always shows a rating
-      const sources = ["js/google-rating.json", "api/google-rating", "/api/google-rating"];
+      const sources = [
+        "js/google-rating.json",
+        apiUrl("/api/google-rating"),
+        "api/google-rating",
+      ];
       for (const url of sources) {
         try {
           const data = await loadJson(url);

@@ -30,9 +30,33 @@ const SESSION_MS = 1000 * 60 * 60 * 2; // 2 hours
 const SUBSCRIBE_LIMIT = 8;
 const SUBSCRIBE_WINDOW_MS = 15 * 60 * 1000;
 const subscribeHits = new Map();
+const CORS_ORIGINS = String(
+  process.env.CORS_ORIGINS ||
+    "https://n0cct1s.github.io,http://127.0.0.1:3000,http://localhost:3000,http://127.0.0.1:5500,http://localhost:5500"
+)
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+const CROSS_SITE_COOKIES = String(process.env.COOKIE_SAMESITE || "").toLowerCase() === "none";
 
 app.use(express.json({ limit: "32kb" }));
 app.use(express.urlencoded({ extended: true }));
+
+app.use((req, res, next) => {
+  const origin = String(req.headers.origin || "");
+  if (origin && CORS_ORIGINS.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+    res.setHeader("Vary", "Origin");
+  }
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+  return next();
+});
+
 app.use(
   session({
     name: "judys.sid",
@@ -41,9 +65,9 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: "lax",
+      sameSite: CROSS_SITE_COOKIES ? "none" : "lax",
       maxAge: SESSION_MS,
-      secure: process.env.NODE_ENV === "production",
+      secure: CROSS_SITE_COOKIES || process.env.NODE_ENV === "production",
     },
   })
 );
@@ -107,9 +131,13 @@ app.post("/api/newsletter/subscribe", (req, res) => {
         .json({ error: "Too many signup attempts. Please try again later." });
     }
 
+    const sourceRaw = String(req.body.source || "website").trim().toLowerCase();
+    const source = ["website", "coupon", "newsletter"].includes(sourceRaw)
+      ? sourceRaw
+      : "website";
     const subscriber = upsertSubscriber({
       email: req.body.email,
-      source: "website",
+      source,
     });
     res.json({
       ok: true,
