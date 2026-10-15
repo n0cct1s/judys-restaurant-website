@@ -32,7 +32,7 @@ const SUBSCRIBE_WINDOW_MS = 15 * 60 * 1000;
 const subscribeHits = new Map();
 const CORS_ORIGINS = String(
   process.env.CORS_ORIGINS ||
-    "https://n0cct1s.github.io,http://127.0.0.1:3000,http://localhost:3000,http://127.0.0.1:5500,http://localhost:5500"
+    "https://judysvb.com,https://www.judysvb.com,https://n0cct1s.github.io,http://127.0.0.1:3000,http://localhost:3000,http://127.0.0.1:5500,http://localhost:5500"
 )
   .split(",")
   .map((s) => s.trim())
